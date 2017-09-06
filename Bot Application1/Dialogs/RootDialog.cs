@@ -3,7 +3,6 @@ using Microsoft.Bot.Builder.Dialogs;
 using Microsoft.Bot.Builder.Luis.Models;
 using Microsoft.Bot.Builder.Luis;
 using System.Threading.Tasks;
-using Bot_Application1.form_Flow.sampleFormFlow;
 using Microsoft.Bot.Builder.FormFlow;
 using System.Collections.Generic;
 using Microsoft.Bot.Connector;
@@ -14,6 +13,7 @@ using System.IO;
 using System.Configuration;
 using System.Linq;
 using Newtonsoft.Json.Linq;
+using Bot_Application1.form_Flow;
 
 namespace Bot_Application1.Dialogs
 {
@@ -87,7 +87,7 @@ namespace Bot_Application1.Dialogs
 
             //mediante las quick replies podemos pedir botones rapidos cambiando el objeto channelData
             var reply = context.MakeMessage();
-
+            reply.Text = "location";
             var channelData = JObject.FromObject(new
             {
                 quick_replies = new dynamic[]{

@@ -3,7 +3,6 @@ using Microsoft.Bot.Builder.Dialogs;
 using Microsoft.Bot.Builder.Luis.Models;
 using Microsoft.Bot.Builder.Luis;
 using System.Threading.Tasks;
-using Bot_Application1.form_Flow.sampleFormFlow;
 using Microsoft.Bot.Builder.FormFlow;
 using System.Collections.Generic;
 using Microsoft.Bot.Connector;
@@ -13,6 +12,7 @@ using Newtonsoft.Json;
 using System.IO;
 using System.Configuration;
 using System.Linq;
+using Bot_Application1.form_Flow;
 
 namespace hangouts.Dialogs
 {

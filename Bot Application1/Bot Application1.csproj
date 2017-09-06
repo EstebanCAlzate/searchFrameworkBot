@@ -113,10 +113,9 @@
     <Compile Include="App_Start\WebApiConfig.cs" />
     <Compile Include="ContextConstants.cs" />
     <Compile Include="Controllers\MessagesController.cs" />
-    <Compile Include="Controllers\ProcessController.cs" />
     <Compile Include="Dialogs\LUISDialogClassDefault.cs" />
     <Compile Include="Dialogs\RootDialog.cs" />
-    <Compile Include="form_Flow\sampleFormFlow.cs" />
+    <Compile Include="form_Flow\addressForm.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>

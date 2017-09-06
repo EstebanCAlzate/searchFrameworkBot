@@ -17,17 +17,18 @@ namespace Bot_Application1
         [ResponseType(typeof(void))]
         public virtual async Task<HttpResponseMessage> Post([FromBody] Activity activity)
         {
-            activity.GetStateClient().BotState.DeleteStateForUser(activity.ChannelId, activity.From.Id);
+            //Borramos la cache de la conversacion para poder cambiar de canal.
+            //activity.GetStateClient().BotState.DeleteStateForUser(activity.ChannelId, activity.From.Id);
 
-            //if (activity.ChannelId == "facebook")
-            //{
-            //    if (activity.Type == ActivityTypes.Message)
-            //    {
-            //        await Conversation.SendAsync(activity, () => new RootDialog());
-            //    }
-            //}
-            //else
-            //{
+            if (activity.ChannelId == "facebook")
+            {
+                if (activity.Type == ActivityTypes.Message)
+                {
+                    await Conversation.SendAsync(activity, () => new RootDialog());
+                }
+            }
+            else
+            {
                 if (activity.Type == ActivityTypes.Message)
                 {
                     switch (activity.GetActivityType())
@@ -45,9 +46,9 @@ namespace Bot_Application1
                 {
                     HandleSystemMessage(activity);
                 }
-            //}
-                var response = Request.CreateResponse(HttpStatusCode.OK);
-                return response;
+            }
+            var response = Request.CreateResponse(HttpStatusCode.OK);
+            return response;
         }
 
         private Activity HandleSystemMessage(Activity message)
