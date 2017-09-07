@@ -8,6 +8,9 @@ using System.Web.Http.Description;
 using System.Diagnostics;
 using hangouts.Dialogs;
 using Bot_Application1.Dialogs;
+using Bot_Application1.request;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Bot_Application1
 {
@@ -19,33 +22,34 @@ namespace Bot_Application1
         {
             //Borramos la cache de la conversacion para poder cambiar de canal.
             //activity.GetStateClient().BotState.DeleteStateForUser(activity.ChannelId, activity.From.Id);
-
-            if (activity.ChannelId == "facebook")
+            if (activity.Type == ActivityTypes.Message)
             {
-                if (activity.Type == ActivityTypes.Message)
+                //Utilizamos un Dialog diferente
+                if (activity.ChannelId == "facebook")
                 {
+                    geocoordinates geocordinates = JsonConvert.DeserializeObject<geocoordinates>(activity.ChannelData.ToString());
+                    JObject geocode = JObject.Parse(activity.ChannelData.ToString());
+                    //Guardamos los datos de la ubicacion en la memoria del usuario.
+                    if (geocordinates.message.attachments != null)
+                    {
+                        geocordinates.message.attachments[0].payload.coordinates.log = (float)geocode["message"]["attachments"][0]["payload"]["coordinates"]["long"];
+                        StateClient stateClient = activity.GetStateClient();
+
+                        BotData userData = await stateClient.BotState.GetUserDataAsync(activity.ChannelId, activity.From.Id);
+                        userData.SetProperty<geocoordinates>("UserData", geocordinates);
+                        await stateClient.BotState.SetUserDataAsync(activity.ChannelId, activity.From.Id, userData);
+                        activity.Text = "geocoordinates";
+                    }
                     await Conversation.SendAsync(activity, () => new RootDialog());
+                }
+                else
+                {
+                    await Conversation.SendAsync(activity, () => new LUISDialogClassDefault());
                 }
             }
             else
             {
-                if (activity.Type == ActivityTypes.Message)
-                {
-                    switch (activity.GetActivityType())
-                    {
-                        case ActivityTypes.Message:
-                            await Conversation.SendAsync(activity, () => new LUISDialogClassDefault());
-                            break;
-
-                        default:
-                            Trace.TraceError($"Unknown activity type ignored: {activity.GetActivityType()}");
-                            break;
-                    }
-                }
-                else
-                {
-                    HandleSystemMessage(activity);
-                }
+                Trace.TraceError($"Unknown activity type ignored: {activity.GetActivityType()}");
             }
             var response = Request.CreateResponse(HttpStatusCode.OK);
             return response;
