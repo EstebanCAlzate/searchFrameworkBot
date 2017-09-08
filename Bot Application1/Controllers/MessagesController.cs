@@ -5,54 +5,68 @@ using System.Web.Http;
 using Microsoft.Bot.Builder.Dialogs;
 using Microsoft.Bot.Connector;
 using System.Web.Http.Description;
-using System.Diagnostics;
-using hangouts.Dialogs;
 using Bot_Application1.Dialogs;
 using Bot_Application1.request;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using hangouts.Dialogs;
+using System;
+using Microsoft.ApplicationInsights;
 
 namespace Bot_Application1
 {
     [BotAuthentication]
     public class MessagesController : ApiController
     {
+
         [ResponseType(typeof(void))]
         public virtual async Task<HttpResponseMessage> Post([FromBody] Activity activity)
         {
-            //Borramos la cache de la conversacion para poder cambiar de canal.
-            //activity.GetStateClient().BotState.DeleteStateForUser(activity.ChannelId, activity.From.Id);
-            if (activity.Type == ActivityTypes.Message)
+            var telemetry = new TelemetryClient();
+            try
             {
-                //Utilizamos un Dialog diferente
-                if (activity.ChannelId == "facebook")
+                //Borramos la cache de la conversacion para poder cambiar de canal.
+                //activity.GetStateClient().BotState.DeleteStateForUser(activity.ChannelId, activity.From.Id);
+                if (activity.Type == ActivityTypes.Message)
                 {
-                    geocoordinates geocordinates = JsonConvert.DeserializeObject<geocoordinates>(activity.ChannelData.ToString());
-                    JObject geocode = JObject.Parse(activity.ChannelData.ToString());
-                    //Guardamos los datos de la ubicacion en la memoria del usuario.
-                    if (geocordinates.message.attachments != null)
+                    //Utilizamos un Dialog diferente
+                    if (activity.ChannelId == "facebook")
                     {
-                        geocordinates.message.attachments[0].payload.coordinates.log = (float)geocode["message"]["attachments"][0]["payload"]["coordinates"]["long"];
-                        StateClient stateClient = activity.GetStateClient();
+                        geocoordinates geocordinates = JsonConvert.DeserializeObject<geocoordinates>(activity.ChannelData.ToString());
+                        JObject geocode = JObject.Parse(activity.ChannelData.ToString());
+                        if (geocordinates.message.attachments != null)
+                        {
+                            geocordinates.message.attachments[0].payload.coordinates.log = (float)geocode["message"]["attachments"][0]["payload"]["coordinates"]["long"];
+                            //Guardamos los datos de la ubicacion en la memoria del usuario.
+                            StateClient stateClient = activity.GetStateClient();
+                            BotData userData = await stateClient.BotState.GetUserDataAsync(activity.ChannelId, activity.From.Id);
+                            userData.SetProperty<geocoordinates>("UserData", geocordinates);
+                            await stateClient.BotState.SetUserDataAsync(activity.ChannelId, activity.From.Id, userData);
 
-                        BotData userData = await stateClient.BotState.GetUserDataAsync(activity.ChannelId, activity.From.Id);
-                        userData.SetProperty<geocoordinates>("UserData", geocordinates);
-                        await stateClient.BotState.SetUserDataAsync(activity.ChannelId, activity.From.Id, userData);
-                        activity.Text = "geocoordinates";
+                            activity.Text = "geocoordinates";
+                        }
+                        await Conversation.SendAsync(activity, () => new RootDialog());
                     }
-                    await Conversation.SendAsync(activity, () => new RootDialog());
+                    else
+                    {
+                        await Conversation.SendAsync(activity, () => new LUISDialogClassDefault());
+                    }
                 }
                 else
                 {
-                    await Conversation.SendAsync(activity, () => new LUISDialogClassDefault());
+                    HandleSystemMessage(activity);
                 }
+
+                var response = Request.CreateResponse(HttpStatusCode.OK);
+                return response;
             }
-            else
+            catch (Exception ex)
             {
-                Trace.TraceError($"Unknown activity type ignored: {activity.GetActivityType()}");
+                telemetry.TrackEvent(ex.Message);
+
+                var response = Request.CreateResponse(ex.Message);
+                return response;
             }
-            var response = Request.CreateResponse(HttpStatusCode.OK);
-            return response;
         }
 
         private Activity HandleSystemMessage(Activity message)

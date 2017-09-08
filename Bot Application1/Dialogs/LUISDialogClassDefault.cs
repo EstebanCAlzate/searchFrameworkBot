@@ -13,6 +13,7 @@ using System.IO;
 using System.Configuration;
 using System.Linq;
 using Bot_Application1.form_Flow;
+using Bot_Application1.utilities;
 
 namespace hangouts.Dialogs
 {
@@ -22,10 +23,8 @@ namespace hangouts.Dialogs
     {
         #region atributos
         #endregion
-
         #region contructora
         #endregion
-
         #region Intents
 
         [LuisIntent("None")]
@@ -40,7 +39,6 @@ namespace hangouts.Dialogs
         public async Task saludo(IDialogContext context, LuisResult result)
         {
             await context.PostAsync("Buenas soy un Bot generico estoy aqui parece hacer muchas cosas!");
-
             //FormFlow: esta es la forma de llamarlo desde una entidad
             var entities = new List<EntityRecommendation>(result.Entities);
             var sandwichOrder = new addressForm();
@@ -51,9 +49,9 @@ namespace hangouts.Dialogs
         [LuisIntent("search")]
         public async Task Search(IDialogContext context, LuisResult result)
         {
-            //conseguimos la forma canonica de la entidad.
             if (result.Entities.FirstOrDefault(e => e.Type == "establishment") != null)
             {
+                //conseguimos la forma canonica de la entidad.
                 dynamic establishment = result.Entities.FirstOrDefault(e => e.Type == "establishment").Resolution.FirstOrDefault().Value;
                 string establishmentString = establishment[0];
                 result.Entities.FirstOrDefault(e => e.Type == "establishment").Entity = establishmentString;
@@ -62,7 +60,6 @@ namespace hangouts.Dialogs
             {
                 string address = result.Entities.FirstOrDefault(e => e.Type == "address").Entity;
             }
-
             //FormFlow: esta es la forma de llamarlo desde una entidad
             List<EntityRecommendation> entities = new List<EntityRecommendation>(result.Entities);
             var sandwichOrder = new addressForm();
@@ -79,82 +76,25 @@ namespace hangouts.Dialogs
                 string GoogleApiPassword = ConfigurationManager.AppSettings["GoogleApiPassword"];
 
                 var feedback = await result;
-                string jsonText;
-                string jsonAddress = feedback.address.Replace(" ", "+");
+                string address = feedback.address.Replace(" ", "+");
+                string establishment = feedback.establishment;
 
                 //Obtenmos la longitudad y latitud de la direccion
-                HttpWebRequest request = (HttpWebRequest)WebRequest
-                    .Create($"http://maps.google.com/maps/api/geocode/json?address={jsonAddress}+Spain");
-
-                request.Method = WebRequestMethods.Http.Get;
-                request.Accept = "application/json";
-                HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-
-                using (var sr = new StreamReader(response.GetResponseStream()))
-                {
-                    jsonText = sr.ReadToEnd();
-                }
-                googleGeocode feed = JsonConvert.DeserializeObject<googleGeocode>(jsonText);
+                Geocode geocode = new Geocode();
+                googleGeocode feed = geocode.getLngLat(address);
 
                 //toString("R") para obtener todos los decimales del valor float
                 string lng = feed.results[0].geometry.location.lng.ToString("R").Replace(",", ".");
                 string lat = feed.results[0].geometry.location.lat.ToString("R").Replace(",", ".");
-                string establishment = feedback.establishment;
 
                 //Obtenmos la lista de lugares cercanos a nuestra direccion
-                string url = $"https://maps.googleapis.com/maps/api/place/nearbysearch/json?location={lat},{lng}&radius=500&type={establishment}&key={GoogleApiPassword}";
-                request = (HttpWebRequest)WebRequest
-                    .Create(url);
-
-                request.Method = WebRequestMethods.Http.Get;
-                request.Accept = "application/json";
-                response = (HttpWebResponse)request.GetResponse();
-
-                using (var sr = new StreamReader(response.GetResponseStream()))
-                {
-                    jsonText = sr.ReadToEnd();
-                }
-
-                googleNearby nearBy = JsonConvert.DeserializeObject<googleNearby>(jsonText);
+                nearbySearch goNearBy = new nearbySearch();
+                googleNearby nearBy = goNearBy.nearBy(lng, lat, establishment);
 
                 //recorremos y guardamos los lugares. Hacemos una peticion para cargar la foto.
                 List<Attachment> placeList = new List<Attachment>();
-                foreach (googleNearby.Result i in nearBy.results)
-                {
-                    //Link request
-                    url = $"https://maps.googleapis.com/maps/api/place/details/json?place_id={i.place_id}&key={GoogleApiPassword}";
-                    request = (HttpWebRequest)WebRequest.Create(url);
-                    request.Method = WebRequestMethods.Http.Get;
-                    request.Accept = "application/json";
-                    response = (HttpWebResponse)request.GetResponse();
-                    using (var sr = new StreamReader(response.GetResponseStream()))
-                    {
-                        jsonText = sr.ReadToEnd();
-                    }
-                    place_details placeDetails = JsonConvert.DeserializeObject<place_details>(jsonText);
-
-                    //Foto request
-                    String cardImage;
-                    cardImage = i.icon;
-
-                    if (i.photos != null)
-                    {
-                        url = $"https://maps.googleapis.com/maps/api/place/photo?maxwidth=200&photoreference={i.photos[0].photo_reference}&key={GoogleApiPassword}";
-                        request = (HttpWebRequest)WebRequest
-                                    .Create(url);
-
-                        request.Method = WebRequestMethods.Http.Get;
-                        request.Accept = "application/json";
-                        response = (HttpWebResponse)request.GetResponse();
-                        cardImage = response.ResponseUri.ToString();
-                    }
-
-                    placeList.Add(GetHeroCard(
-                        i.name, i.vicinity, i.rating.ToString(),
-                        new CardImage(url: cardImage),
-                        new CardAction(ActionTypes.OpenUrl, "See more", value: placeDetails.result.url))
-                        );
-                }
+                postPlaceslist postPlces = new postPlaceslist();
+                placeList = postPlces.postEstablishment(nearBy);
 
                 var resultMessage = context.MakeMessage();
                 resultMessage.AttachmentLayout = AttachmentLayoutTypes.Carousel;

@@ -41,3 +41,16 @@ C:\Users\esteban.alzate.BABEL-SI\documents\visual studio 2017\Projects\searchBot
 C:\Users\esteban.alzate.BABEL-SI\documents\visual studio 2017\Projects\searchBot\Bot Application1\obj\Release\Bot Application.dll
 C:\Users\esteban.alzate.BABEL-SI\documents\visual studio 2017\Projects\searchBot\Bot Application1\obj\Release\Bot Application.pdb
 C:\Users\esteban.alzate.BABEL-SI\documents\visual studio 2017\Projects\searchBot\Bot Application1\obj\Release\Bot Application1.csprojResolveAssemblyReference.cache
+C:\Users\esteban.alzate.BABEL-SI\documents\visual studio 2017\Projects\searchBot\Bot Application1\bin\ApplicationInsights.config
+C:\Users\esteban.alzate.BABEL-SI\documents\visual studio 2017\Projects\searchBot\Bot Application1\bin\Microsoft.AI.Agent.Intercept.dll
+C:\Users\esteban.alzate.BABEL-SI\documents\visual studio 2017\Projects\searchBot\Bot Application1\bin\Microsoft.AI.DependencyCollector.dll
+C:\Users\esteban.alzate.BABEL-SI\documents\visual studio 2017\Projects\searchBot\Bot Application1\bin\Microsoft.AI.PerfCounterCollector.dll
+C:\Users\esteban.alzate.BABEL-SI\documents\visual studio 2017\Projects\searchBot\Bot Application1\bin\Microsoft.AI.ServerTelemetryChannel.dll
+C:\Users\esteban.alzate.BABEL-SI\documents\visual studio 2017\Projects\searchBot\Bot Application1\bin\Microsoft.AI.Web.dll
+C:\Users\esteban.alzate.BABEL-SI\documents\visual studio 2017\Projects\searchBot\Bot Application1\bin\Microsoft.AI.WindowsServer.dll
+C:\Users\esteban.alzate.BABEL-SI\documents\visual studio 2017\Projects\searchBot\Bot Application1\bin\Microsoft.ApplicationInsights.dll
+C:\Users\esteban.alzate.BABEL-SI\documents\visual studio 2017\Projects\searchBot\Bot Application1\bin\Microsoft.AI.DependencyCollector.xml
+C:\Users\esteban.alzate.BABEL-SI\documents\visual studio 2017\Projects\searchBot\Bot Application1\bin\Microsoft.AI.ServerTelemetryChannel.xml
+C:\Users\esteban.alzate.BABEL-SI\documents\visual studio 2017\Projects\searchBot\Bot Application1\bin\Microsoft.AI.Web.xml
+C:\Users\esteban.alzate.BABEL-SI\documents\visual studio 2017\Projects\searchBot\Bot Application1\bin\Microsoft.AI.WindowsServer.xml
+C:\Users\esteban.alzate.BABEL-SI\documents\visual studio 2017\Projects\searchBot\Bot Application1\bin\Microsoft.ApplicationInsights.xml
