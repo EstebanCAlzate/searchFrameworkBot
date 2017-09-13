@@ -10,8 +10,8 @@ using Bot_Application1.request;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using hangouts.Dialogs;
-using System;
 using Microsoft.ApplicationInsights;
+using Microsoft.Rest;
 
 namespace Bot_Application1
 {
@@ -33,14 +33,18 @@ namespace Bot_Application1
                     if (activity.ChannelId == "facebook")
                     {
                         geocoordinates geocordinates = JsonConvert.DeserializeObject<geocoordinates>(activity.ChannelData.ToString());
-                        JObject geocode = JObject.Parse(activity.ChannelData.ToString());
+
                         if (geocordinates.message.attachments != null)
                         {
-                            geocordinates.message.attachments[0].payload.coordinates.log = (float)geocode["message"]["attachments"][0]["payload"]["coordinates"]["long"];
                             //Guardamos los datos de la ubicacion en la memoria del usuario.
+                            JObject geocode = JObject.Parse(activity.ChannelData.ToString());
+
                             StateClient stateClient = activity.GetStateClient();
                             BotData userData = await stateClient.BotState.GetUserDataAsync(activity.ChannelId, activity.From.Id);
+
+                            geocordinates.message.attachments[0].payload.coordinates.log = (float)geocode["message"]["attachments"][0]["payload"]["coordinates"]["long"];
                             userData.SetProperty<geocoordinates>("UserData", geocordinates);
+
                             await stateClient.BotState.SetUserDataAsync(activity.ChannelId, activity.From.Id, userData);
 
                             activity.Text = "geocoordinates";
@@ -56,18 +60,15 @@ namespace Bot_Application1
                 {
                     HandleSystemMessage(activity);
                 }
-
-                var response = Request.CreateResponse(HttpStatusCode.OK);
-                return response;
             }
-            catch (Exception ex)
+            catch (HttpOperationException ex)
             {
-                telemetry.TrackEvent(ex.Message);
-
-                var response = Request.CreateResponse(ex.Message);
-                return response;
+                telemetry.TrackEvent("Messages controller: " + ex.Message);
             }
+            var response = Request.CreateResponse(HttpStatusCode.OK);
+            return response;
         }
+
 
         private Activity HandleSystemMessage(Activity message)
         {
@@ -94,7 +95,6 @@ namespace Bot_Application1
             else if (message.Type == ActivityTypes.Ping)
             {
             }
-
             return null;
         }
     }

@@ -24,6 +24,7 @@ namespace Bot_Application1.Dialogs
         #endregion
         #region Intents
 
+
         [LuisIntent("None")]
         [LuisIntent("")]
         public async Task None(IDialogContext context, LuisResult result)
@@ -36,7 +37,14 @@ namespace Bot_Application1.Dialogs
         public async Task saludo(IDialogContext context, LuisResult result)
         {
             await context.PostAsync("Buenas soy un Bot generico estoy aqui parece hacer muchas cosas!");
-            //FormFlow: esta es la forma de llamarlo desde una entidad
+
+            StateClient stateClient = context.Activity.GetStateClient();
+
+            BotData userData = await stateClient.BotState.GetUserDataAsync(context.Activity.ChannelId, context.Activity.From.Id);
+            userData.SetProperty<int>("cercaDeMi", 1);
+            await stateClient.BotState.SetUserDataAsync(context.Activity.ChannelId, context.Activity.From.Id, userData);
+
+            //FormFlow: esta es la forma de llamarlo desde una entidad  
             var entities = new List<EntityRecommendation>(result.Entities);
             var sandwichOrder = new addressForm();
             var feedbackForm = new FormDialog<addressForm>(sandwichOrder, addressForm.BuildForm, FormOptions.PromptInStart, entities);
@@ -48,6 +56,12 @@ namespace Bot_Application1.Dialogs
         {
             try
             {
+                StateClient stateClient = context.Activity.GetStateClient();
+
+                BotData userData = await stateClient.BotState.GetUserDataAsync(context.Activity.ChannelId, context.Activity.From.Id);
+                userData.SetProperty<int>("cercaDeMi", 1);
+                await stateClient.BotState.SetUserDataAsync(context.Activity.ChannelId, context.Activity.From.Id, userData);
+
                 if (result.Entities.FirstOrDefault(e => e.Type == "establishment") != null)
                 {
                     //conseguimos la forma canonica de la entidad.
@@ -76,7 +90,10 @@ namespace Bot_Application1.Dialogs
             try
             {
                 StateClient stateClient = context.Activity.GetStateClient();
+
                 BotData userData = await stateClient.BotState.GetUserDataAsync(context.Activity.ChannelId, context.Activity.From.Id);
+                userData.SetProperty<int>("cercaDeMi", 0);
+                await stateClient.BotState.SetUserDataAsync(context.Activity.ChannelId, context.Activity.From.Id, userData);
 
                 if (result.Entities.FirstOrDefault(e => e.Type == "establishment") != null)
                 {
@@ -85,18 +102,17 @@ namespace Bot_Application1.Dialogs
                     string establishmentString = establishment[0];
 
                     //Guardamos en memoria del usuario el establicimiento.
-                    userData.SetProperty<bool>("cercaDeMi", true);
+                    userData = await stateClient.BotState.GetUserDataAsync(context.Activity.ChannelId, context.Activity.From.Id);
                     userData.SetProperty<string>("userDataEstablishment", establishmentString);
-                    await stateClient.BotState.SetUserDataAsync(context.Activity.ChannelId, context.Activity.From.Id, userData);
                 }
                 else
                 {
                     //Guardamos en memoria del usuario el establicimiento.
-                    userData.SetProperty<bool>("cercaDeMi", false);
+                    userData = await stateClient.BotState.GetUserDataAsync(context.Activity.ChannelId, context.Activity.From.Id);
                     userData.SetProperty<string>("userDataEstablishment", null);
-                    await stateClient.BotState.SetUserDataAsync(context.Activity.ChannelId, context.Activity.From.Id, userData);
                 }
 
+                await stateClient.BotState.SetUserDataAsync(context.Activity.ChannelId, context.Activity.From.Id, userData);
                 //Utilizamos las quick replies
                 var reply = context.MakeMessage();
                 Quick_replies qr = new Quick_replies();
@@ -115,13 +131,12 @@ namespace Bot_Application1.Dialogs
             {
                 //Obtenemos el JSON para obtener los datos de localizacion.
                 StateClient stateClient = context.Activity.GetStateClient();
-                geocoordinates geo = new geocoordinates();
-                BotData botData = await stateClient.BotState.GetUserDataAsync(context.Activity.ChannelId, context.Activity.From.Id);
-                geo = botData.GetProperty<geocoordinates>("UserData");
 
+                BotData userData = stateClient.BotState.GetUserData(context.Activity.ChannelId, context.Activity.From.Id);
+                geocoordinates geo = userData.GetProperty<geocoordinates>("UserData");
                 //Obtenemos el establecimiento de la memoria del usuario
-                //botData = await stateClient.BotState.GetUserDataAsync(context.Activity.ChannelId, context.Activity.From.Id);
-                string establishment = botData.GetProperty<string>("userDataEstablishment");
+                string establishment = userData.GetProperty<string>("userDataEstablishment");
+                int cercaDeM = userData.GetProperty<int>("cercaDeMi");
 
                 string lat = geo.message.attachments[0].payload.coordinates.lat.ToString("R").Replace(",", ".");
                 string lng = geo.message.attachments[0].payload.coordinates.log.ToString("R").Replace(",", ".");
@@ -171,17 +186,18 @@ namespace Bot_Application1.Dialogs
             try
             {
                 string GoogleApiPassword = ConfigurationManager.AppSettings["GoogleApiPassword"];
-
+                //Obtenemos datos guardados en el contexto
                 StateClient stateClient = context.Activity.GetStateClient();
-                BotData userData = await stateClient.BotState.GetUserDataAsync(context.Activity.ChannelId, context.Activity.From.Id);
-                bool cercaDeMi = userData.GetProperty<bool>("cercaDeMi");
+
+                BotData userData = stateClient.BotState.GetUserData(context.Activity.ChannelId, context.Activity.From.Id);
+                int cercaDeMi = userData.GetProperty<int>("cercaDeMi");
 
                 var feedback = await result;
                 string address = feedback.address;
                 string establishment = feedback.establishment;
                 string lng, lat;
 
-                if (cercaDeMi)
+                if (cercaDeMi != 0)
                 {
                     //Obtenmos la longitudad y latitud de la direccion
                     Geocode geocode = new Geocode();
@@ -193,7 +209,7 @@ namespace Bot_Application1.Dialogs
                 }
                 else
                 {
-                    lat = address.Replace(" ", "").Split(new char[]{','})[0]; ;
+                    lat = address.Replace(" ", "").Split(new char[] { ',' })[0]; ;
                     lng = address.Replace(" ", "").Split(new char[] { ',' })[1]; ;
                 }
 
@@ -218,7 +234,7 @@ namespace Bot_Application1.Dialogs
             }
             catch (Exception ex)
             {
-                await context.PostAsync("Oups!! Justo esa tarea no puedo hacerla, lo siento!.");
+                await context.PostAsync("Oups!! Justo esa tarea no puedo hacerla, lo siento!. " + ex.Message);
             }
             finally
             {
